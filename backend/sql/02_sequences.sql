@@ -1,0 +1,7 @@
+USE inventory_management;
+
+-- MySQL uses AUTO_INCREMENT primary keys.
+ALTER TABLE items AUTO_INCREMENT = 1000;
+ALTER TABLE stock AUTO_INCREMENT = 1000;
+ALTER TABLE stock_transactions AUTO_INCREMENT = 1000;
+ALTER TABLE audit_log AUTO_INCREMENT = 1000;

@@ -1,0 +1,22 @@
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+backend/mysql-account-reset.local.sql
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Node / frontend build output
+node_modules/
+dist/
+
+# Editors and operating system
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
