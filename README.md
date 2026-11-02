@@ -173,7 +173,18 @@ Copy-Item .env.example .env
 npm.cmd run dev
 ```
 
-Open `http://127.0.0.1:5173`. Vite is configured with `strictPort: true`, so it exits rather than switching to another port if 5173 is occupied; stop the conflicting server before starting this frontend. In development, API requests use Vite's same-origin `/api` proxy to `http://127.0.0.1:8002`; this also avoids browser CORS and cross-host cookie issues. Set `VITE_API_BASE_URL` only when intentionally overriding the proxy. Never put database or SMTP credentials in the frontend.
+Open `http://127.0.0.1:5173`. Vite is configured with `strictPort: true`, so it exits rather than switching to another port if 5173 is occupied; stop the conflicting server before starting this frontend. In development, API requests use Vite's same-origin `/api` proxy to `http://127.0.0.1:8002`; this also avoids browser CORS and cross-host cookie issues. For production, the frontend uses `VITE_API_BASE_URL`; never put database or SMTP credentials in the frontend.
+
+## Deploying the frontend to Vercel
+
+1. Deploy the backend separately to a public HTTPS host and confirm its API is reachable at `https://<your-backend-domain>/api/health`. Configure its database and SMTP secrets in that host's environment settings, not in Vercel.
+2. In Vercel, set the project **Root Directory** to `frontend`. Use `npm run build` as the build command and `dist` as the output directory.
+3. In the Vercel project's **Settings → Environment Variables**, add `VITE_API_BASE_URL` with the backend's public HTTPS API base URL, including `/api` (for example, `https://<your-backend-domain>/api`). Apply it to Production and any Preview environments you use.
+4. On the backend host, set `INVENTORY_CORS_ORIGINS` to a JSON array containing the exact Vercel frontend origin, such as `["https://<your-project>.vercel.app"]`, and set `INVENTORY_FRONTEND_URL` to that same origin. Do not include `/api` or a trailing path in either origin.
+5. Because the frontend and a separately hosted API commonly use cross-site cookies, configure the backend with `INVENTORY_AUTH_COOKIE_SECURE=true` and `INVENTORY_AUTH_COOKIE_SAMESITE=none`. `SameSite=None` requires secure HTTPS cookies. Keep `INVENTORY_AUTH_COOKIE_SAMESITE=lax` only when the frontend and API are same-site.
+6. Save the settings and trigger a new Vercel deployment; Vite embeds `VITE_API_BASE_URL` at build time. After deployment, test sign-in and the dashboard. If using a custom frontend domain, update the backend CORS origin and `INVENTORY_FRONTEND_URL` to that exact origin and redeploy the backend.
+
+If `VITE_API_BASE_URL` is missing from a production build, API requests fail with a visible configuration message rather than silently targeting localhost. All frontend requests use the same configured API client, so authentication, dashboard, inventory/stock, reports, and audit-log requests share this base URL.
 
 ## Running tests and checks
 

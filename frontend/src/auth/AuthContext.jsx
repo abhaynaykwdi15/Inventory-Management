@@ -21,7 +21,11 @@ export function AuthProvider({ children }) {
         setStatus("unauthenticated");
       } else {
         setStatus("error");
-        setAuthError(error.response?.data?.detail || "The account service is unavailable.");
+        setAuthError(
+          error.message?.startsWith("VITE_API_BASE_URL is missing.")
+            ? error.message
+            : error.response?.data?.detail || "The account service is unavailable.",
+        );
       }
     }
   }, []);
