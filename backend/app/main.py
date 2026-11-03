@@ -75,13 +75,16 @@ def create_app() -> FastAPI:
         version="1.0.0",
         lifespan=lifespan,
     )
+    
+    # Updated CORS Middleware to allow all origins and standard HTTP methods/headers
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=cors_settings.cors_origins,
+        allow_origins=["*"],  # Tumchya Vercel domain sathi sarv origins allow kele ahet
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "DELETE"],
-        allow_headers=["Content-Type"],
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
+    
     application.include_router(auth.router, prefix="/api")
     application.include_router(health.router, prefix="/api")
     application.include_router(dashboard.router, prefix="/api")
