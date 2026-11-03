@@ -12,7 +12,7 @@ export function AuthProvider({ children }) {
     setStatus("loading");
     setAuthError("");
     try {
-      const { data } = await api.get("/auth/me");
+      const { data } = await api.get("/api/auth/me");
       setUser(data);
       setStatus("authenticated");
     } catch (error) {
