@@ -43,7 +43,12 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
 
     application.state.settings = settings
     try:
-        application.state.pool = database.create_pool(settings)
+        pool = database.create_pool(settings)
+        application.state.pool = pool
+        
+        # Automatically create database tables on startup to solve Error 1146
+        database.init_db(pool)
+        
         application.state.database_error = None
     except MySQLDatabaseError as error:
         application.state.pool = None
@@ -76,7 +81,6 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     
-    # Fix: Use cors_settings origins instead of wildcard "*" to support credentials
     origins = getattr(cors_settings, "origins", None) or [
         "https://inventory-management-881a-git-main-abhaynaykwdi15.vercel.app",
         "http://localhost:5173"
