@@ -22,9 +22,7 @@ export function AuthProvider({ children }) {
       } else {
         setStatus("error");
         setAuthError(
-          error.message?.startsWith("VITE_API_BASE_URL is missing.")
-            ? error.message
-            : error.response?.data?.detail || "The account service is unavailable.",
+          error.response?.data?.detail || "The account service is unavailable.",
         );
       }
     }
