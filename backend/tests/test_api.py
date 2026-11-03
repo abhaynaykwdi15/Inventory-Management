@@ -67,6 +67,30 @@ def test_api_uses_configured_cors_origins(monkeypatch):
     ]
 
 
+def test_registration_requires_smtp_before_creating_an_account(client, monkeypatch):
+    from app.repositories import accounts
+
+    client.app.state.settings.smtp_host = None
+    client.app.state.settings.smtp_from_email = None
+    account_lookup = Mock()
+    monkeypatch.setattr(accounts, "email_is_unavailable", account_lookup)
+
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "full_name": "Test User",
+            "email": "signup@example.invalid",
+            "password": "a-long-test-password",
+        },
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "Email delivery is not configured. Set the SMTP settings in backend/.env."
+    }
+    account_lookup.assert_not_called()
+
+
 def test_inventory_routes_require_an_authenticated_account(client):
     client.app.dependency_overrides.pop(require_user)
 

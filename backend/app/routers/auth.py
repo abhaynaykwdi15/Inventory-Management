@@ -20,7 +20,7 @@ from app.schemas.auth import (
 )
 from app.services.auth_security import hash_password, new_token, verify_password
 from app.services.database_errors import run_read, run_write
-from app.services.email import send_account_email
+from app.services.email import send_account_email, validate_email_configuration
 
 
 logger = logging.getLogger(__name__)
@@ -71,6 +71,7 @@ def register(
     request: Request,
     connection: Annotated[Any, Depends(get_connection)],
 ) -> dict[str, str]:
+    validate_email_configuration(_settings(request))
     email_unavailable = run_read(
         connection,
         lambda: accounts.email_is_unavailable(

@@ -12,14 +12,7 @@ from app.config import Settings
 logger = logging.getLogger(__name__)
 
 
-def send_account_email(
-    settings: Settings,
-    *,
-    recipient: str,
-    subject: str,
-    action: str,
-    token: str,
-) -> None:
+def validate_email_configuration(settings: Settings) -> None:
     if not settings.smtp_host or not settings.smtp_from_email:
         raise HTTPException(
             status_code=503,
@@ -42,6 +35,17 @@ def send_account_email(
             status_code=503,
             detail="Authenticated SMTP must use STARTTLS or SSL.",
         )
+
+
+def send_account_email(
+    settings: Settings,
+    *,
+    recipient: str,
+    subject: str,
+    action: str,
+    token: str,
+) -> None:
+    validate_email_configuration(settings)
 
     url = f"{settings.frontend_url.rstrip('/')}/{action}?token={quote(token)}"
     message = EmailMessage()
