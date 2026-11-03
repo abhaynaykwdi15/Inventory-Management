@@ -86,7 +86,11 @@ def test_registration_requires_smtp_before_creating_an_account(client, monkeypat
 
     assert response.status_code == 503
     assert response.json() == {
-        "detail": "Email delivery is not configured. Set the SMTP settings in backend/.env."
+        "detail": (
+            "Email delivery is not configured. Set INVENTORY_SMTP_HOST and "
+            "INVENTORY_SMTP_FROM_EMAIL in the backend environment "
+            "(Render: service Environment settings)."
+        )
     }
     account_lookup.assert_not_called()
 

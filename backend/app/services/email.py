@@ -16,7 +16,11 @@ def validate_email_configuration(settings: Settings) -> None:
     if not settings.smtp_host or not settings.smtp_from_email:
         raise HTTPException(
             status_code=503,
-            detail="Email delivery is not configured. Set the SMTP settings in backend/.env.",
+            detail=(
+                "Email delivery is not configured. Set INVENTORY_SMTP_HOST and "
+                "INVENTORY_SMTP_FROM_EMAIL in the backend environment "
+                "(Render: service Environment settings)."
+            ),
         )
     if bool(settings.smtp_username) != bool(settings.smtp_password):
         raise HTTPException(
