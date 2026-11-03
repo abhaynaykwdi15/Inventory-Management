@@ -76,10 +76,15 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
     
-    # Updated CORS Middleware to allow all origins and standard HTTP methods/headers
+    # Fix: Use cors_settings origins instead of wildcard "*" to support credentials
+    origins = getattr(cors_settings, "origins", None) or [
+        "https://inventory-management-881a-git-main-abhaynaykwdi15.vercel.app",
+        "http://localhost:5173"
+    ]
+
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Tumchya Vercel domain sathi sarv origins allow kele ahet
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
