@@ -29,7 +29,7 @@ FastAPI response ──► React refreshes server data
 
 Dashboard charts and summary cards call `GET /api/dashboard/summary`. MySQL computes item counts, unit totals, low/out-of-stock counts, period receipt/issue quantities, category totals, movement-by-day rows, low-stock comparisons, and recent activity. The endpoint does not derive totals from a limited transaction page, and the frontend shows an empty state when chart datasets contain no rows.
 
-The database schema is installed using the ordered scripts in `backend/sql`; application startup only creates a connection pool and does not create or alter tables. This keeps the deployed schema aligned with the API's repositories and stored procedures.
+The inventory schema is installed using the ordered scripts in `backend/sql`. On startup, the API also creates any missing account, session, and email-token tables using the same definitions as `06_auth.sql`; `CREATE TABLE IF NOT EXISTS` preserves existing account data. Stock, transaction, procedure, trigger, and audit schemas must still be installed using the SQL scripts.
 
 On Vercel, `frontend/vercel.json` proxies `/api` requests to the Render backend and serves the React entry point for client-side routes. Leave `VITE_API_BASE_URL` unset in Vercel so the browser uses the same-origin proxy and session cookies work across pages.
 

@@ -160,7 +160,7 @@ Then start the API in that terminal:
 python -m uvicorn app.main:app --reload --port 8002
 ```
 
-The backend reads `backend/.env` regardless of the terminal's current directory. It validates its connection settings and creates a MySQL pool at startup. If credentials are missing or MySQL cannot be reached, the API remains available for diagnostics, while database-backed routes return HTTP 503 with an actionable error; it never switches to mock data.
+The backend reads `backend/.env` regardless of the terminal's current directory. It validates its connection settings, creates a MySQL pool, and ensures the account/session/email-token tables exist at startup. Install the inventory schema with the ordered SQL scripts. If credentials are missing, MySQL cannot be reached, or the account schema cannot be initialized, the API remains available for diagnostics, while database-backed routes return HTTP 503; it never switches to mock data.
 
 ## Frontend setup
 

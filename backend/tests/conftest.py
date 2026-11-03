@@ -1,5 +1,5 @@
 from collections.abc import Generator
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,6 +10,9 @@ from app.routers.auth import require_user
 
 
 class FakePool:
+    def get_connection(self) -> MagicMock:
+        return MagicMock()
+
     def close(self) -> None:
         pass
 

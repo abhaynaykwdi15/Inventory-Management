@@ -44,6 +44,7 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     application.state.settings = settings
     try:
         pool = database.create_pool(settings)
+        database.ensure_auth_schema(pool)
         application.state.pool = pool
         application.state.database_error = None
     except MySQLDatabaseError as error:
@@ -59,7 +60,8 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
                 "MySQL is unavailable or rejected the configured credentials."
             )
         logger.error(
-            "Could not create the MySQL connection pool (error code %s).",
+            "Could not initialize the MySQL connection pool or account schema "
+            "(error code %s).",
             error.errno,
         )
         yield
