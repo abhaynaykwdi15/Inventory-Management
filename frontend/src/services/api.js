@@ -2,8 +2,10 @@ import axios from "axios";
 
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const missingProductionApiBaseUrl = import.meta.env.PROD && !configuredApiBaseUrl;
+
+// Automatically append /api so all endpoints align with backend routers
 const apiBaseUrl = configuredApiBaseUrl
-  ? configuredApiBaseUrl.replace(/\/+$/, "")
+  ? `${configuredApiBaseUrl.replace(/\/+$/, "")}/api`
   : "/api";
 
 export const api = axios.create({
