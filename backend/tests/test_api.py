@@ -52,6 +52,21 @@ def test_development_cors_defaults_include_vite_port_5174():
     assert "http://127.0.0.1:5174" in settings.cors_origins
 
 
+def test_api_uses_configured_cors_origins(monkeypatch):
+    from app.main import create_app
+
+    monkeypatch.setenv(
+        "INVENTORY_CORS_ORIGINS",
+        '["https://inventory.example"]',
+    )
+
+    application = create_app()
+
+    assert application.user_middleware[0].kwargs["allow_origins"] == [
+        "https://inventory.example"
+    ]
+
+
 def test_inventory_routes_require_an_authenticated_account(client):
     client.app.dependency_overrides.pop(require_user)
 

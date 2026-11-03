@@ -45,10 +45,6 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     try:
         pool = database.create_pool(settings)
         application.state.pool = pool
-        
-        # Automatically create database tables on startup to solve Error 1146
-        database.init_db(pool)
-        
         application.state.database_error = None
     except MySQLDatabaseError as error:
         application.state.pool = None
@@ -80,20 +76,15 @@ def create_app() -> FastAPI:
         version="1.0.0",
         lifespan=lifespan,
     )
-    
-    origins = getattr(cors_settings, "origins", None) or [
-        "https://inventory-management-881a-git-main-abhaynaykwdi15.vercel.app",
-        "http://localhost:5173"
-    ]
 
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,
+        allow_origins=cors_settings.cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
     application.include_router(auth.router, prefix="/api")
     application.include_router(health.router, prefix="/api")
     application.include_router(dashboard.router, prefix="/api")

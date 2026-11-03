@@ -29,6 +29,10 @@ FastAPI response ──► React refreshes server data
 
 Dashboard charts and summary cards call `GET /api/dashboard/summary`. MySQL computes item counts, unit totals, low/out-of-stock counts, period receipt/issue quantities, category totals, movement-by-day rows, low-stock comparisons, and recent activity. The endpoint does not derive totals from a limited transaction page, and the frontend shows an empty state when chart datasets contain no rows.
 
+The database schema is installed using the ordered scripts in `backend/sql`; application startup only creates a connection pool and does not create or alter tables. This keeps the deployed schema aligned with the API's repositories and stored procedures.
+
+On Vercel, `frontend/vercel.json` proxies `/api` requests to the Render backend and serves the React entry point for client-side routes. Leave `VITE_API_BASE_URL` unset in Vercel so the browser uses the same-origin proxy and session cookies work across pages.
+
 ## Account and session flow
 
 Registration creates an unverified account and emails a one-time verification link. Passwords are salted and hashed by the backend; email action links are also stored only as token hashes and expire after 30 minutes. Successful sign-in creates a random server-side session whose hash is stored in MySQL and whose opaque value is returned only in an HttpOnly cookie. Inventory and account-management routes require that session. Sign-out revokes it; password reset revokes all of the account's sessions, and password change revokes other sessions.
