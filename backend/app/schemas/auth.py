@@ -1,3 +1,4 @@
+
 import re
 
 from pydantic import BaseModel, Field, field_validator
@@ -41,26 +42,6 @@ class LoginRequest(BaseModel):
         return value
 
 
-class EmailRequest(BaseModel):
-    email: str = Field(min_length=3, max_length=254)
-
-    @field_validator("email")
-    @classmethod
-    def normalize_email(cls, value: str) -> str:
-        value = value.strip().lower()
-        if not _EMAIL_PATTERN.fullmatch(value):
-            raise ValueError("Enter a valid email address.")
-        return value
-
-
-class TokenRequest(BaseModel):
-    token: str = Field(min_length=32, max_length=128)
-
-
-class PasswordResetRequest(TokenRequest):
-    password: str = Field(min_length=12, max_length=128)
-
-
 class ProfileUpdateRequest(BaseModel):
     full_name: str = Field(min_length=2, max_length=100)
     email: str = Field(min_length=3, max_length=254)
@@ -91,5 +72,3 @@ class AccountRead(BaseModel):
     user_id: int
     full_name: str
     email: str
-    pending_email: str | None
-    email_verified: bool

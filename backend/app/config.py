@@ -1,3 +1,4 @@
+
 from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
@@ -6,10 +7,13 @@ from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="INVENTORY_",
-        env_file=Path(__file__).resolve().parents[1] / ".env",
+        env_file=BACKEND_DIR / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -19,6 +23,7 @@ class Settings(BaseSettings):
     mysql_database: str = Field(default="inventory_management", min_length=1)
     mysql_user: str = Field(min_length=1)
     mysql_password: str = Field(min_length=1)
+    mysql_ssl_ca: str = str(BACKEND_DIR / "certs" / "isrgrootx1.pem")
     pool_size: int = Field(default=5, ge=1, le=32)
     auth_session_hours: int = Field(default=12, ge=1, le=720)
     auth_cookie_secure: bool = False
@@ -45,7 +50,7 @@ class Settings(BaseSettings):
 class CorsSettings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="INVENTORY_",
-        env_file=Path(__file__).resolve().parents[1] / ".env",
+        env_file=BACKEND_DIR / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )

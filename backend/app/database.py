@@ -1,4 +1,6 @@
+
 from collections.abc import Generator
+from pathlib import Path
 from typing import Any
 
 from fastapi import HTTPException, Request
@@ -59,6 +61,13 @@ _AUTH_SCHEMA_STATEMENTS = (
 
 
 def create_pool(settings: Settings) -> MySQLConnectionPool:
+    ca_path = Path(settings.mysql_ssl_ca)
+
+    if not ca_path.is_file():
+        raise FileNotFoundError(
+            f"TiDB Cloud CA certificate not found: {ca_path}"
+        )
+
     return MySQLConnectionPool(
         pool_name="inventory_pool",
         pool_size=settings.pool_size,
@@ -68,7 +77,10 @@ def create_pool(settings: Settings) -> MySQLConnectionPool:
         database=settings.mysql_database,
         user=settings.mysql_user,
         password=settings.mysql_password,
-        connection_timeout=5,
+        connection_timeout=10,
+        ssl_ca=str(ca_path),
+        ssl_verify_cert=True,
+        ssl_verify_identity=True,
     )
 
 
@@ -85,6 +97,7 @@ def ensure_auth_schema(pool: MySQLConnectionPool) -> None:
 
 def get_connection(request: Request) -> Generator[Any, None, None]:
     pool = getattr(request.app.state, "pool", None)
+
     if pool is None:
         detail = getattr(
             request.app.state,

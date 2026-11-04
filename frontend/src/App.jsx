@@ -1,3 +1,4 @@
+
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import AppLayout from "./layouts/AppLayout.jsx";
@@ -16,7 +17,11 @@ const StockManagementPage = lazy(() => import("./pages/StockManagementPage.jsx")
 const TransactionsPage = lazy(() => import("./pages/TransactionsPage.jsx"));
 
 function page(element) {
-  return <Suspense fallback={<LoadingState label="Opening page..." />}>{element}</Suspense>;
+  return (
+    <Suspense fallback={<LoadingState label="Opening page..." />}>
+      {element}
+    </Suspense>
+  );
 }
 
 export default function App() {
@@ -25,11 +30,14 @@ export default function App() {
       <Routes>
         <Route path="login" element={<AuthPage mode="login" />} />
         <Route path="register" element={<AuthPage mode="register" />} />
-        <Route path="forgot-password" element={<AuthPage mode="forgot" />} />
-        <Route path="reset-password" element={<AuthPage mode="reset" />} />
-        <Route path="verify-email" element={<AuthPage mode="verify" />} />
-        <Route path="resend-verification" element={<AuthPage mode="resend" />} />
-        <Route element={<AuthGate><AppLayout /></AuthGate>}>
+
+        <Route
+          element={
+            <AuthGate>
+              <AppLayout />
+            </AuthGate>
+          }
+        >
           <Route index element={page(<OverviewPage />)} />
           <Route path="items" element={page(<ItemsPage />)} />
           <Route path="stock" element={page(<StockManagementPage />)} />
@@ -39,7 +47,8 @@ export default function App() {
           <Route path="audit-logs" element={page(<AuditLogsPage />)} />
           <Route path="settings" element={page(<SettingsPage />)} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </AuthProvider>
   );

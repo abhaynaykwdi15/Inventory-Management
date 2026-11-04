@@ -1,3 +1,4 @@
+
 from datetime import datetime
 from typing import Any
 
@@ -22,8 +23,12 @@ def create_account(
     with connection.cursor() as cursor:
         cursor.execute(
             """
-            INSERT INTO app_users (full_name, email, password_hash)
-            VALUES (%(full_name)s, %(email)s, %(password_hash)s)
+            INSERT INTO app_users (
+                full_name, email, password_hash, email_verified
+            )
+            VALUES (
+                %(full_name)s, %(email)s, %(password_hash)s, TRUE
+            )
             """,
             {
                 "full_name": full_name,
@@ -34,12 +39,15 @@ def create_account(
         return int(cursor.lastrowid)
 
 
-def get_account_by_email(connection: Any, email: str) -> dict[str, Any] | None:
+def get_account_by_email(
+    connection: Any,
+    email: str,
+) -> dict[str, Any] | None:
     with connection.cursor() as cursor:
         cursor.execute(
             """
-            SELECT user_id, full_name, email, pending_email, password_hash,
-                   email_verified
+            SELECT user_id, full_name, email, pending_email,
+                   password_hash, email_verified
               FROM app_users
              WHERE email = %(email)s
             """,
@@ -59,15 +67,24 @@ def email_is_unavailable(
             SELECT 1
               FROM app_users
              WHERE (email = %(email)s OR pending_email = %(email)s)
-               AND (%(exclude_user_id)s IS NULL OR user_id <> %(exclude_user_id)s)
+               AND (
+                    %(exclude_user_id)s IS NULL
+                    OR user_id <> %(exclude_user_id)s
+               )
              LIMIT 1
             """,
-            {"email": email, "exclude_user_id": exclude_user_id},
+            {
+                "email": email,
+                "exclude_user_id": exclude_user_id,
+            },
         )
         return cursor.fetchone() is not None
 
 
-def get_account_by_id(connection: Any, user_id: int) -> dict[str, Any] | None:
+def get_account_by_id(
+    connection: Any,
+    user_id: int,
+) -> dict[str, Any] | None:
     with connection.cursor() as cursor:
         cursor.execute(
             """
@@ -80,6 +97,8 @@ def get_account_by_id(connection: Any, user_id: int) -> dict[str, Any] | None:
         return _account(cursor)
 
 
+# Legacy token functions retained temporarily until auth.py is updated.
+
 def create_email_token(
     connection: Any,
     *,
@@ -89,7 +108,10 @@ def create_email_token(
 ) -> None:
     with connection.cursor() as cursor:
         cursor.execute(
-            "DELETE FROM account_tokens WHERE user_id = %(user_id)s AND purpose = %(purpose)s",
+            """
+            DELETE FROM account_tokens
+             WHERE user_id = %(user_id)s AND purpose = %(purpose)s
+            """,
             {"user_id": user_id, "purpose": purpose},
         )
         cursor.execute(
@@ -100,7 +122,11 @@ def create_email_token(
                 DATE_ADD(UTC_TIMESTAMP(), INTERVAL 30 MINUTE)
             )
             """,
-            {"user_id": user_id, "token_hash": hash_token(token), "purpose": purpose},
+            {
+                "user_id": user_id,
+                "token_hash": hash_token(token),
+                "purpose": purpose,
+            },
         )
 
 
@@ -111,7 +137,11 @@ def verify_email_token(connection: Any, token: str) -> bool:
     )
 
 
-def _consume_email_token(connection: Any, token: str, purpose: str) -> bool:
+def _consume_email_token(
+    connection: Any,
+    token: str,
+    purpose: str,
+) -> bool:
     with connection.cursor() as cursor:
         cursor.execute(
             """
@@ -122,12 +152,17 @@ def _consume_email_token(connection: Any, token: str, purpose: str) -> bool:
                AND expires_at > UTC_TIMESTAMP()
              FOR UPDATE
             """,
-            {"token_hash": hash_token(token), "purpose": purpose},
+            {
+                "token_hash": hash_token(token),
+                "purpose": purpose,
+            },
         )
         row = cursor.fetchone()
         if row is None:
             return False
+
         user_id = int(row[0])
+
         if purpose == "verify_email":
             cursor.execute(
                 """
@@ -142,14 +177,19 @@ def _consume_email_token(connection: Any, token: str, purpose: str) -> bool:
                 """
                 UPDATE app_users
                    SET email = pending_email, pending_email = NULL
-                 WHERE user_id = %(user_id)s AND pending_email IS NOT NULL
+                 WHERE user_id = %(user_id)s
+                   AND pending_email IS NOT NULL
                 """,
                 {"user_id": user_id},
             )
             if cursor.rowcount != 1:
                 return False
+
         cursor.execute(
-            "DELETE FROM account_tokens WHERE token_hash = %(token_hash)s",
+            """
+            DELETE FROM account_tokens
+             WHERE token_hash = %(token_hash)s
+            """,
             {"token_hash": hash_token(token)},
         )
         return True
@@ -176,7 +216,10 @@ def create_session(
         )
 
 
-def get_session_account(connection: Any, token: str) -> dict[str, Any] | None:
+def get_session_account(
+    connection: Any,
+    token: str,
+) -> dict[str, Any] | None:
     with connection.cursor() as cursor:
         cursor.execute(
             """
@@ -186,7 +229,6 @@ def get_session_account(connection: Any, token: str) -> dict[str, Any] | None:
               JOIN app_users u ON u.user_id = s.user_id
              WHERE s.token_hash = %(token_hash)s
                AND s.expires_at > UTC_TIMESTAMP()
-               AND u.email_verified = TRUE
             """,
             {"token_hash": hash_token(token)},
         )
@@ -196,12 +238,19 @@ def get_session_account(connection: Any, token: str) -> dict[str, Any] | None:
 def delete_session(connection: Any, token: str) -> None:
     with connection.cursor() as cursor:
         cursor.execute(
-            "DELETE FROM user_sessions WHERE token_hash = %(token_hash)s",
+            """
+            DELETE FROM user_sessions
+             WHERE token_hash = %(token_hash)s
+            """,
             {"token_hash": hash_token(token)},
         )
 
 
-def set_pending_email(connection: Any, user_id: int, email: str) -> None:
+def set_pending_email(
+    connection: Any,
+    user_id: int,
+    email: str,
+) -> None:
     with connection.cursor() as cursor:
         cursor.execute(
             """
@@ -216,29 +265,45 @@ def set_pending_email(connection: Any, user_id: int, email: str) -> None:
 def cancel_pending_email(connection: Any, user_id: int) -> None:
     with connection.cursor() as cursor:
         cursor.execute(
-            "UPDATE app_users SET pending_email = NULL WHERE user_id = %(user_id)s",
+            """
+            UPDATE app_users
+               SET pending_email = NULL
+             WHERE user_id = %(user_id)s
+            """,
             {"user_id": user_id},
         )
         cursor.execute(
             """
             DELETE FROM account_tokens
-             WHERE user_id = %(user_id)s AND purpose = 'change_email'
+             WHERE user_id = %(user_id)s
+               AND purpose = 'change_email'
             """,
             {"user_id": user_id},
         )
 
 
-def password_hash_for_user(connection: Any, user_id: int) -> str | None:
+def password_hash_for_user(
+    connection: Any,
+    user_id: int,
+) -> str | None:
     with connection.cursor() as cursor:
         cursor.execute(
-            "SELECT password_hash FROM app_users WHERE user_id = %(user_id)s",
+            """
+            SELECT password_hash
+              FROM app_users
+             WHERE user_id = %(user_id)s
+            """,
             {"user_id": user_id},
         )
         row = cursor.fetchone()
         return row[0] if row else None
 
 
-def update_profile(connection: Any, user_id: int, full_name: str) -> None:
+def update_profile(
+    connection: Any,
+    user_id: int,
+    full_name: str,
+) -> None:
     with connection.cursor() as cursor:
         cursor.execute(
             """
@@ -250,7 +315,11 @@ def update_profile(connection: Any, user_id: int, full_name: str) -> None:
         )
 
 
-def reset_password(connection: Any, user_id: int, password_hash: str) -> None:
+def reset_password(
+    connection: Any,
+    user_id: int,
+    password_hash: str,
+) -> None:
     with connection.cursor() as cursor:
         cursor.execute(
             """
@@ -260,13 +329,24 @@ def reset_password(connection: Any, user_id: int, password_hash: str) -> None:
             """,
             {"password_hash": password_hash, "user_id": user_id},
         )
-        cursor.execute("DELETE FROM user_sessions WHERE user_id = %(user_id)s", {"user_id": user_id})
+        cursor.execute(
+            """
+            DELETE FROM user_sessions
+             WHERE user_id = %(user_id)s
+            """,
+            {"user_id": user_id},
+        )
 
 
-def reset_password_with_token(connection: Any, token: str, password_hash: str) -> bool:
+def reset_password_with_token(
+    connection: Any,
+    token: str,
+    password_hash: str,
+) -> bool:
     user_id = consume_reset_token(connection, token)
     if user_id is None:
         return False
+
     reset_password(connection, user_id, password_hash)
     return True
 
@@ -289,7 +369,8 @@ def update_password_keep_session(
         cursor.execute(
             """
             DELETE FROM user_sessions
-             WHERE user_id = %(user_id)s AND token_hash <> %(token_hash)s
+             WHERE user_id = %(user_id)s
+               AND token_hash <> %(token_hash)s
             """,
             {
                 "user_id": user_id,
@@ -298,20 +379,26 @@ def update_password_keep_session(
         )
 
 
-def account_for_reset(connection: Any, email: str) -> dict[str, Any] | None:
+def account_for_reset(
+    connection: Any,
+    email: str,
+) -> dict[str, Any] | None:
     with connection.cursor() as cursor:
         cursor.execute(
             """
             SELECT user_id, full_name, email
               FROM app_users
-             WHERE email = %(email)s AND email_verified = TRUE
+             WHERE email = %(email)s
             """,
             {"email": email},
         )
         return _account(cursor)
 
 
-def consume_reset_token(connection: Any, token: str) -> int | None:
+def consume_reset_token(
+    connection: Any,
+    token: str,
+) -> int | None:
     with connection.cursor() as cursor:
         cursor.execute(
             """
@@ -327,9 +414,14 @@ def consume_reset_token(connection: Any, token: str) -> int | None:
         row = cursor.fetchone()
         if row is None:
             return None
+
         user_id = int(row[0])
+
         cursor.execute(
-            "DELETE FROM account_tokens WHERE user_id = %(user_id)s",
+            """
+            DELETE FROM account_tokens
+             WHERE user_id = %(user_id)s
+            """,
             {"user_id": user_id},
         )
         return user_id
